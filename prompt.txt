@@ -1,0 +1,160 @@
+You are a senior AI/ML + backend engineer and technical product lead. Plan and scaffold an **AI-powered medical assistant system** orchestrated with **LangGraph** and **Pydantic** for **strict structured outputs**. The system must be designed for safety and non-diagnostic guidance.
+
+### Project goal
+
+Build a multi-agent conversational medical assistant with these nodes (agents) in a LangGraph workflow:
+
+1. **Reception Node (Planner + Intake + Triage)**
+
+* Intake user’s complaint using natural language questions.
+* Perform **emergency triage**:
+
+  * Detect potential emergencies (red flags).
+  * If suspected emergency: ask a minimal set of follow-up questions to confirm severity and provide immediate “what to do now” guidance, including asking if the patient needs assistance while accessing emergency services.
+  * Short-circuit the graph to an Emergency Advice output (do not run other nodes).
+* **Non-emergency flow**:
+
+  * Collect required info from the user.
+  * Act as a **planner** (planner pattern): decide which downstream nodes to call and in what order based on user intent and case completeness.
+  * Output a **structured case summary** (Pydantic → JSON) to downstream nodes.
+* The planner must let the **LLM decide which nodes activate** and manage ordering, but only within a **constrained allowed action space**.
+
+2. **Diagnosis Node**
+
+* Input: structured case from Reception.
+* Ask follow-ups only if needed (missing critical details).
+* Output:
+
+  * Differential diagnosis list (most likely conditions) with brief reasoning.
+  * Red flags requiring urgent in-person care.
+
+3. **Treatment Node**
+
+* Input: structured case (and optionally diagnosis output).
+* Provide possible treatment options:
+
+  * Self-care/home-care when appropriate.
+  * OTC options when relevant.
+* Must include strong disclaimer: not medical advice; consult licensed clinician before starting/changing treatment.
+
+4. **Specialist Recommender Node**
+
+* Input: structured case (and optionally diagnosis).
+* Recommend the appropriate clinician type (primary care vs specialist; which specialty; when to escalate).
+
+5. **General Health Information Provider Node**
+
+* High-level, **non-personalized** educational info:
+
+  * Prevention, screening, risk reduction, lifestyle.
+* Use when user intent is general education rather than diagnosis/treatment.
+
+### Global safety + behavior requirements
+
+* Use clear, simple language for non-experts.
+* Avoid definitive diagnoses or prescriptions.
+* Provide concise disclaimer in every node output.
+* Never provide instructions that delay emergency care when red flags are present.
+* Always ask age/sex-at-birth (or gender if relevant), pregnancy status when applicable, duration, severity, and key red-flag questions when symptoms match risky domains (chest pain, stroke signs, severe SOB, suicidality, severe allergic reaction, GI bleed, etc.).
+* If mental health self-harm risk is detected, provide crisis guidance and local emergency resources pattern (without assuming country), ask if they are in immediate danger, and encourage contacting local emergency numbers.
+
+### Implementation constraints
+
+* Use **LangGraph** for orchestration and state.
+* Use **Pydantic** models for:
+
+  * Graph state
+  * Node inputs/outputs
+  * Planner decisions (structured action plan)
+* Enforce structured output parsing; include retry/repair strategy for invalid JSON.
+* Provide a minimal but realistic Python project scaffold.
+
+### What you must produce
+
+Deliver a **complete engineering plan** plus an initial code scaffold. Include:
+
+1. **Architecture overview**
+
+* Nodes, edges, conditional routing
+* State machine description
+* How planner decisions map to graph routing
+
+2. **Data contracts (Pydantic)**
+   Define Pydantic models for:
+
+* `PatientIntake`
+* `CaseSummary`
+* `RedFlag`
+* `PlannerDecision` (ordered list of node calls with rationale)
+* `DiagnosisResult`
+* `TreatmentPlan`
+* `SpecialistRecommendation`
+* `GeneralHealthInfo`
+* `EmergencyAdvice`
+* Shared `DisclaimerBlock`
+* Full `GraphState` with fields for user messages, case summary, planner plan, and node outputs.
+
+3. **Planner policy**
+
+* Provide an explicit decision rubric (intent detection + safety gating).
+* Allowed node set: `diagnosis`, `treatment`, `specialist`, `general_info`.
+* Must include emergency short-circuit logic.
+* Provide examples of planner outputs for common intents:
+
+  * “What is this symptom?”
+  * “What should I do about X?”
+  * “Is this urgent?”
+  * “Tell me about prevention for Y”
+  * Multi-symptom case with missing details
+
+4. **Conversation design**
+
+* Intake question sets (minimum dataset) and follow-up templates.
+* How nodes ask follow-ups without looping indefinitely.
+* Stop conditions and max turns per node.
+
+5. **LangGraph orchestration plan**
+
+* Pseudocode for graph construction
+* Router function(s) driven by `PlannerDecision`
+* Error handling: parsing failures, missing data, user refusal, ambiguity
+* Observability hooks (logging/tracing), plus a simple test harness
+
+6. **Repository scaffold**
+   Provide a file tree and starter code stubs (Python) for:
+
+* `app/main.py` (CLI or simple server)
+* `app/graph.py` (LangGraph assembly)
+* `app/nodes/reception.py`
+* `app/nodes/diagnosis.py`
+* `app/nodes/treatment.py`
+* `app/nodes/specialist.py`
+* `app/nodes/general_info.py`
+* `app/schemas.py` (Pydantic models)
+* `app/safety.py` (triage rules, red flags)
+* `tests/test_planner.py` (unit tests for planner parsing and routing)
+
+7. **Safety + compliance checklist**
+
+* Explicitly list unsafe behaviors to prevent
+* Disclaimers per node
+* Emergency-handling requirements
+* Data privacy notes (avoid storing PHI; logging hygiene)
+
+### Coding expectations
+
+* Use modern Python (3.11+).
+* Typed code.
+* Each node returns a Pydantic output.
+* LLM calls should be abstracted behind a small interface (so it can be swapped).
+* Include at least one example end-to-end run (mocked LLM acceptable).
+
+### Output format
+
+* Use clear headings.
+* Provide code blocks for models and key files.
+* Keep it implementable, not just conceptual.
+
+Now produce the plan and scaffold.
+
+
