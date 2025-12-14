@@ -1,6 +1,6 @@
 You are a senior AI/ML + backend engineer and technical product lead. Plan and scaffold an **AI-powered medical assistant system** orchestrated with **LangGraph** and **Pydantic** for **strict structured outputs**. The system must be designed for safety and non-diagnostic guidance.
 
-### Project goal
+### Project goals
 
 Build a multi-agent conversational medical assistant with these nodes (agents) in a LangGraph workflow:
 
